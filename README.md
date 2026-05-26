@@ -22,7 +22,7 @@
 
 请从 GitHub Releases 页面下载最新 APK：
 
-<https://github.com/garyflyinghigh/android_reader/releases>
+<https://github.com/garyflyinghigh/local-reader-tts-android/releases>
 
 ## 使用方法
 

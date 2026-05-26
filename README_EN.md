@@ -22,7 +22,7 @@ Local Reader is a Flutter-based Android app for reading local TXT and EPUB books
 
 Download the latest APK from the GitHub Releases page:
 
-<https://github.com/garyflyinghigh/android_reader/releases>
+<https://github.com/garyflyinghigh/local-reader-tts-android/releases>
 
 ## How to Use
 
