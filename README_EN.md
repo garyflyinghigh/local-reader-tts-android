@@ -24,6 +24,17 @@ Download the latest APK from the GitHub Releases page:
 
 <https://github.com/garyflyinghigh/local-reader-tts-android/releases>
 
+The release page provides several APK files:
+
+| File | Device | Notes |
+| --- | --- | --- |
+| `local-reader-0.1.0+1-arm64-v8a.apk` | Most newer Android phones | Recommended first choice, smaller download |
+| `local-reader-0.1.0+1-armeabi-v7a.apk` | Older 32-bit ARM Android phones | Try this for older devices |
+| `local-reader-0.1.0+1-x86_64.apk` | x86_64 emulators or rare x86_64 devices | Usually not needed for regular phones |
+| `local-reader-0.1.0+1-universal.apk` | When you are not sure which architecture you need | Best compatibility, largest file |
+
+If you are not sure which file to download, choose `local-reader-0.1.0+1-universal.apk`. For most mainstream Android phones from recent years, `local-reader-0.1.0+1-arm64-v8a.apk` should work.
+
 ## How to Use
 
 1. Install the APK on an Android device.

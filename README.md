@@ -24,6 +24,17 @@
 
 <https://github.com/garyflyinghigh/local-reader-tts-android/releases>
 
+Release 页面提供多个 APK：
+
+| 文件 | 适用设备 | 说明 |
+| --- | --- | --- |
+| `local-reader-0.1.0+1-arm64-v8a.apk` | 大多数较新的 Android 手机 | 推荐优先下载，体积较小 |
+| `local-reader-0.1.0+1-armeabi-v7a.apk` | 较老的 32 位 ARM Android 手机 | 旧设备可尝试此版本 |
+| `local-reader-0.1.0+1-x86_64.apk` | x86_64 模拟器或少数 x86_64 设备 | 普通手机通常不需要 |
+| `local-reader-0.1.0+1-universal.apk` | 不确定设备架构时 | 兼容性最好，但体积最大 |
+
+如果不知道该下载哪个版本，请下载 `local-reader-0.1.0+1-universal.apk`。如果你的手机是近几年的主流 Android 设备，通常可以下载 `local-reader-0.1.0+1-arm64-v8a.apk`。
+
 ## 使用方法
 
 1. 在 Android 设备上安装 APK。
