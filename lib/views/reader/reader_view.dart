@@ -34,11 +34,15 @@ class _ReaderViewState extends ConsumerState<ReaderView> {
   late int _chapterIndex;
   bool _chromeVisible = true;
   double _fontSize = 19;
+  double _speechRate = 1;
+  double _pitch = 1;
+  TtsVoiceOption? _voice;
   double _scrollFraction = 0;
   int? _highlightedSentenceIndex;
   StreamSubscription<int?>? _ttsIndexSubscription;
   final Map<int, GlobalKey> _paragraphKeys = {};
   Timer? _saveTimer;
+  Timer? _chromeTimer;
   int _ttsSentenceIndex = 0;
   bool _restoredInitialScroll = false;
   bool _restoringInitialScroll = false;
@@ -59,16 +63,29 @@ class _ReaderViewState extends ConsumerState<ReaderView> {
         widget.initialChapterIndex.clamp(0, widget.chapters.length - 1);
     _scrollFraction = widget.initialScrollProgress.clamp(0.0, 1.0);
     _ttsSentenceIndex = widget.initialTtsSentenceIndex;
+    _fontSize = widget.book.fontSize;
+    _speechRate = widget.book.speechRate;
+    _pitch = widget.book.pitch;
+    final voiceName = widget.book.ttsVoiceName;
+    if (voiceName != null) {
+      _voice = TtsVoiceOption(
+        name: voiceName,
+        locale: widget.book.ttsVoiceLocale ?? '',
+      );
+    }
     _scrollController.addListener(_updateScrollProgress);
     _ttsIndexSubscription =
         ref.read(ttsAudioHandlerProvider).currentIndexStream.listen(
               _handleTtsIndexChanged,
             );
+    unawaited(_applySavedReadingPreferences());
+    _scheduleChromeAutoHide();
   }
 
   @override
   void dispose() {
     _saveTimer?.cancel();
+    _chromeTimer?.cancel();
     unawaited(_saveReadingState(touchLastOpened: true));
     _ttsIndexSubscription?.cancel();
     _scrollController.removeListener(_updateScrollProgress);
@@ -87,11 +104,7 @@ class _ReaderViewState extends ConsumerState<ReaderView> {
       body: SafeArea(
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onDoubleTap: () {
-            setState(() {
-              _chromeVisible = !_chromeVisible;
-            });
-          },
+          onTap: _showChromeTemporarily,
           child: Stack(
             children: [
               Positioned.fill(
@@ -161,6 +174,8 @@ class _ReaderViewState extends ConsumerState<ReaderView> {
                     setState(() {
                       _fontSize = value;
                     });
+                    _scheduleSave();
+                    _scheduleChromeAutoHide();
                   },
                   onPlayPause: _toggleTts,
                   onPreviousSentence: _previousSentence,
@@ -287,6 +302,16 @@ class _ReaderViewState extends ConsumerState<ReaderView> {
         );
   }
 
+  Future<void> _applySavedReadingPreferences() async {
+    final ttsHandler = ref.read(ttsAudioHandlerProvider);
+    await ttsHandler.setSpeechRate(_speechRate);
+    await ttsHandler.setPitch(_pitch);
+    final voice = _voice;
+    if (voice != null) {
+      await ttsHandler.setVoice(voice);
+    }
+  }
+
   Future<void> _stopTtsIfCurrentChapter() async {
     final ttsHandler = ref.read(ttsAudioHandlerProvider);
     if (ttsHandler.isLoadedFor(
@@ -376,6 +401,11 @@ class _ReaderViewState extends ConsumerState<ReaderView> {
           chapterIndex: _chapterIndex,
           scrollProgress: _scrollFraction,
           ttsSentenceIndex: _ttsSentenceIndex,
+          fontSize: _fontSize,
+          speechRate: _speechRate,
+          pitch: _pitch,
+          ttsVoiceName: _voice?.name,
+          ttsVoiceLocale: _voice?.locale,
           touchLastOpened: touchLastOpened,
         );
   }
@@ -417,9 +447,24 @@ class _ReaderViewState extends ConsumerState<ReaderView> {
       context: context,
       showDragHandle: true,
       builder: (context) {
-        return _TtsSettingsSheet(ttsHandler: ttsHandler);
+        return _TtsSettingsSheet(
+          ttsHandler: ttsHandler,
+          onSpeechRateChanged: (value) {
+            _speechRate = value;
+            _scheduleSave();
+          },
+          onPitchChanged: (value) {
+            _pitch = value;
+            _scheduleSave();
+          },
+          onVoiceChanged: (voice) {
+            _voice = voice;
+            _scheduleSave();
+          },
+        );
       },
     );
+    _scheduleChromeAutoHide();
   }
 
   Future<void> _showChapterList() async {
@@ -437,6 +482,28 @@ class _ReaderViewState extends ConsumerState<ReaderView> {
     if (selectedIndex != null && mounted) {
       await _switchChapter(selectedIndex);
     }
+    _scheduleChromeAutoHide();
+  }
+
+  void _showChromeTemporarily() {
+    if (!_chromeVisible) {
+      setState(() {
+        _chromeVisible = true;
+      });
+    }
+    _scheduleChromeAutoHide();
+  }
+
+  void _scheduleChromeAutoHide() {
+    _chromeTimer?.cancel();
+    _chromeTimer = Timer(const Duration(seconds: 10), () {
+      if (!mounted || !_chromeVisible) {
+        return;
+      }
+      setState(() {
+        _chromeVisible = false;
+      });
+    });
   }
 }
 
@@ -749,9 +816,15 @@ class _BottomBar extends StatelessWidget {
 class _TtsSettingsSheet extends StatefulWidget {
   const _TtsSettingsSheet({
     required this.ttsHandler,
+    required this.onSpeechRateChanged,
+    required this.onPitchChanged,
+    required this.onVoiceChanged,
   });
 
   final MyTtsAudioHandler ttsHandler;
+  final ValueChanged<double> onSpeechRateChanged;
+  final ValueChanged<double> onPitchChanged;
+  final ValueChanged<TtsVoiceOption> onVoiceChanged;
 
   @override
   State<_TtsSettingsSheet> createState() => _TtsSettingsSheetState();
@@ -797,6 +870,7 @@ class _TtsSettingsSheetState extends State<_TtsSettingsSheet> {
                   _speechRate = stepped;
                 });
                 widget.ttsHandler.setSpeechRate(stepped);
+                widget.onSpeechRateChanged(stepped);
               },
             ),
             _LabeledSlider(
@@ -811,6 +885,7 @@ class _TtsSettingsSheetState extends State<_TtsSettingsSheet> {
                   _pitch = value;
                 });
                 widget.ttsHandler.setPitch(value);
+                widget.onPitchChanged(value);
               },
             ),
             const SizedBox(height: 8),
@@ -852,6 +927,7 @@ class _TtsSettingsSheetState extends State<_TtsSettingsSheet> {
                   onChanged: (voice) {
                     if (voice != null) {
                       widget.ttsHandler.setVoice(voice);
+                      widget.onVoiceChanged(voice);
                     }
                   },
                 );

@@ -44,6 +44,7 @@ class MyTtsAudioHandler extends BaseAudioHandler with QueueHandler {
   final FlutterTts _tts = FlutterTts();
   final StreamController<int?> _currentIndexController =
       StreamController<int?>.broadcast();
+  final Completer<void> _ready = Completer<void>();
 
   List<String> _sentences = const [];
   String _bookTitle = '';
@@ -95,6 +96,7 @@ class MyTtsAudioHandler extends BaseAudioHandler with QueueHandler {
       playing: false,
       processingState: AudioProcessingState.idle,
     );
+    _ready.complete();
   }
 
   Future<void> loadChapter({
@@ -103,6 +105,7 @@ class MyTtsAudioHandler extends BaseAudioHandler with QueueHandler {
     required List<String> sentences,
     int initialSentenceIndex = 0,
   }) async {
+    await _waitUntilReady();
     final cleanedSentences =
         sentences.where((sentence) => sentence.trim().isNotEmpty).toList();
 
@@ -148,6 +151,7 @@ class MyTtsAudioHandler extends BaseAudioHandler with QueueHandler {
   }
 
   Future<List<TtsVoiceOption>> getVoiceOptions() async {
+    await _waitUntilReady();
     final dynamic voices = await _tts.getVoices;
     if (voices is! List) {
       return const [];
@@ -171,18 +175,21 @@ class MyTtsAudioHandler extends BaseAudioHandler with QueueHandler {
   }
 
   Future<void> setSpeechRate(double value) async {
+    await _waitUntilReady();
     _speechRate = value.clamp(0.75, 2.5);
     await _tts.setSpeechRate(_mapSpeechRate(_speechRate));
     await _restartIfPlaying();
   }
 
   Future<void> setPitch(double value) async {
+    await _waitUntilReady();
     _pitch = value.clamp(0.6, 1.6);
     await _tts.setPitch(_pitch);
     await _restartIfPlaying();
   }
 
   Future<void> setVoice(TtsVoiceOption voice) async {
+    await _waitUntilReady();
     _voice = voice;
     await _tts.setVoice(voice.toFlutterTtsVoice());
     await _restartIfPlaying();
@@ -190,6 +197,7 @@ class MyTtsAudioHandler extends BaseAudioHandler with QueueHandler {
 
   @override
   Future<void> play() async {
+    await _waitUntilReady();
     if (_sentences.isEmpty) {
       return;
     }
@@ -210,6 +218,7 @@ class MyTtsAudioHandler extends BaseAudioHandler with QueueHandler {
 
   @override
   Future<void> pause() async {
+    await _waitUntilReady();
     _manualStop = true;
     await _tts.stop();
     _manualStop = false;
@@ -224,6 +233,7 @@ class MyTtsAudioHandler extends BaseAudioHandler with QueueHandler {
 
   @override
   Future<void> stop() async {
+    await _waitUntilReady();
     _manualStop = true;
     await _tts.stop();
     _manualStop = false;
@@ -242,6 +252,7 @@ class MyTtsAudioHandler extends BaseAudioHandler with QueueHandler {
 
   @override
   Future<void> skipToNext() async {
+    await _waitUntilReady();
     if (_sentences.isEmpty) {
       return;
     }
@@ -263,6 +274,7 @@ class MyTtsAudioHandler extends BaseAudioHandler with QueueHandler {
 
   @override
   Future<void> skipToPrevious() async {
+    await _waitUntilReady();
     if (_sentences.isEmpty) {
       return;
     }
@@ -273,6 +285,7 @@ class MyTtsAudioHandler extends BaseAudioHandler with QueueHandler {
 
   @override
   Future<void> skipToQueueItem(int index) async {
+    await _waitUntilReady();
     if (_sentences.isEmpty) {
       return;
     }
@@ -360,5 +373,11 @@ class MyTtsAudioHandler extends BaseAudioHandler with QueueHandler {
         ((multiplier - minMultiplier) / (maxMultiplier - minMultiplier))
             .clamp(0.0, 1.0);
     return minFlutterRate + normalized * (maxFlutterRate - minFlutterRate);
+  }
+
+  Future<void> _waitUntilReady() async {
+    if (!_ready.isCompleted) {
+      await _ready.future;
+    }
   }
 }

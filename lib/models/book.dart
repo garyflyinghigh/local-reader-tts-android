@@ -12,6 +12,11 @@ class Book {
     this.currentChapterIndex = 0,
     this.progress = 0,
     this.ttsSentenceIndex = 0,
+    this.fontSize = 19,
+    this.speechRate = 1,
+    this.pitch = 1,
+    this.ttsVoiceName,
+    this.ttsVoiceLocale,
     this.lastOpenedAt,
   });
 
@@ -22,6 +27,11 @@ class Book {
   final int currentChapterIndex;
   final double progress;
   final int ttsSentenceIndex;
+  final double fontSize;
+  final double speechRate;
+  final double pitch;
+  final String? ttsVoiceName;
+  final String? ttsVoiceLocale;
   final DateTime? lastOpenedAt;
 
   Book copyWith({
@@ -32,6 +42,11 @@ class Book {
     int? currentChapterIndex,
     double? progress,
     int? ttsSentenceIndex,
+    double? fontSize,
+    double? speechRate,
+    double? pitch,
+    String? ttsVoiceName,
+    String? ttsVoiceLocale,
     DateTime? lastOpenedAt,
   }) {
     return Book(
@@ -42,6 +57,11 @@ class Book {
       currentChapterIndex: currentChapterIndex ?? this.currentChapterIndex,
       progress: progress ?? this.progress,
       ttsSentenceIndex: ttsSentenceIndex ?? this.ttsSentenceIndex,
+      fontSize: fontSize ?? this.fontSize,
+      speechRate: speechRate ?? this.speechRate,
+      pitch: pitch ?? this.pitch,
+      ttsVoiceName: ttsVoiceName ?? this.ttsVoiceName,
+      ttsVoiceLocale: ttsVoiceLocale ?? this.ttsVoiceLocale,
       lastOpenedAt: lastOpenedAt ?? this.lastOpenedAt,
     );
   }
@@ -55,6 +75,11 @@ class Book {
       'currentChapterIndex': currentChapterIndex,
       'progress': progress,
       'ttsSentenceIndex': ttsSentenceIndex,
+      'fontSize': fontSize,
+      'speechRate': speechRate,
+      'pitch': pitch,
+      'ttsVoiceName': ttsVoiceName,
+      'ttsVoiceLocale': ttsVoiceLocale,
       'lastOpenedAt': lastOpenedAt?.toIso8601String(),
     };
   }
@@ -71,6 +96,11 @@ class Book {
       currentChapterIndex: _readInt(json['currentChapterIndex']),
       progress: _readDouble(json['progress']).clamp(0.0, 1.0),
       ttsSentenceIndex: _readInt(json['ttsSentenceIndex']),
+      fontSize: _readDouble(json['fontSize'], fallback: 19).clamp(15.0, 28.0),
+      speechRate: _readDouble(json['speechRate'], fallback: 1).clamp(0.75, 2.5),
+      pitch: _readDouble(json['pitch'], fallback: 1).clamp(0.6, 1.6),
+      ttsVoiceName: _readNullableString(json['ttsVoiceName']),
+      ttsVoiceLocale: _readNullableString(json['ttsVoiceLocale']),
       lastOpenedAt: DateTime.tryParse(json['lastOpenedAt']?.toString() ?? ''),
     );
   }
@@ -82,10 +112,15 @@ class Book {
     return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 
-  static double _readDouble(Object? value) {
+  static double _readDouble(Object? value, {double fallback = 0}) {
     if (value is num) {
       return value.toDouble();
     }
-    return double.tryParse(value?.toString() ?? '') ?? 0;
+    return double.tryParse(value?.toString() ?? '') ?? fallback;
+  }
+
+  static String? _readNullableString(Object? value) {
+    final text = value?.toString().trim();
+    return text == null || text.isEmpty ? null : text;
   }
 }

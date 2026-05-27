@@ -42,6 +42,11 @@ class BookStorageService {
     required int chapterIndex,
     required double scrollProgress,
     required int ttsSentenceIndex,
+    double? fontSize,
+    double? speechRate,
+    double? pitch,
+    String? ttsVoiceName,
+    String? ttsVoiceLocale,
     bool touchLastOpened = true,
   }) async {
     final books = await loadBooks();
@@ -52,6 +57,11 @@ class BookStorageService {
             currentChapterIndex: chapterIndex,
             progress: scrollProgress.clamp(0.0, 1.0),
             ttsSentenceIndex: ttsSentenceIndex < 0 ? 0 : ttsSentenceIndex,
+            fontSize: fontSize?.clamp(15.0, 28.0),
+            speechRate: speechRate?.clamp(0.75, 2.5),
+            pitch: pitch?.clamp(0.6, 1.6),
+            ttsVoiceName: ttsVoiceName,
+            ttsVoiceLocale: ttsVoiceLocale,
             lastOpenedAt: touchLastOpened ? DateTime.now() : book.lastOpenedAt,
           )
         else
