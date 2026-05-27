@@ -102,9 +102,9 @@ class _ReaderViewState extends ConsumerState<ReaderView> {
     return Scaffold(
       backgroundColor: background,
       body: SafeArea(
-        child: GestureDetector(
+        child: Listener(
           behavior: HitTestBehavior.opaque,
-          onTap: _showChromeTemporarily,
+          onPointerUp: (_) => _showChromeTemporarily(),
           child: Stack(
             children: [
               Positioned.fill(
@@ -174,7 +174,7 @@ class _ReaderViewState extends ConsumerState<ReaderView> {
                     setState(() {
                       _fontSize = value;
                     });
-                    _scheduleSave();
+                    unawaited(_saveReadingState(touchLastOpened: false));
                     _scheduleChromeAutoHide();
                   },
                   onPlayPause: _toggleTts,
@@ -451,15 +451,15 @@ class _ReaderViewState extends ConsumerState<ReaderView> {
           ttsHandler: ttsHandler,
           onSpeechRateChanged: (value) {
             _speechRate = value;
-            _scheduleSave();
+            unawaited(_saveReadingState(touchLastOpened: false));
           },
           onPitchChanged: (value) {
             _pitch = value;
-            _scheduleSave();
+            unawaited(_saveReadingState(touchLastOpened: false));
           },
           onVoiceChanged: (voice) {
             _voice = voice;
-            _scheduleSave();
+            unawaited(_saveReadingState(touchLastOpened: false));
           },
         );
       },
